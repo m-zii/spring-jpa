@@ -1,7 +1,7 @@
 # JPA
 
 ## 연관관계 매핑
-### 1. 다대일 단방향
+### 1. 다대일
 
 다대일 단방향은 가장 많이 사용하는 연관관계이다. 외래키를 가지고 있는 테이블을 연관관계의 주인으로 매핑한다. 연관관계 주인의 반대편은 외래키에 영향을 주지 않으며 단순 데이터 조회만 가능하다.
 ![image](https://user-images.githubusercontent.com/22049906/196313223-cf6fcb4b-bfd7-4405-b8f5-a230c1a85878.png)
@@ -41,7 +41,7 @@ public class Team {
 }
 ```
 
-### 2. 일대다 단방향
+### 2. 일대다
 - 일대다 단방향은 일대다(1:N)에서 일(1)이 연관관계의 주인
 - 테이블 일대다 관계는 항상 다(N) 쪽에 외래 키가 있음
 ![image](https://user-images.githubusercontent.com/22049906/196318466-903ae10d-0ced-4ac8-833d-867797e33e32.png)
@@ -100,4 +100,122 @@ transaction.commit();
 - 연관관계 관리를 위해 추가로 UPDATE SQL 실행   
 
 일대다 관계는 잘 사용하지 않는다. 필요하다면 다대일 단방향관계에서 양방향관계를 추가한다. __(다대일 양방향관계를 사용)__
+
+### 3. 일대일
+- 일대일 관계는 다대일 관계에서 외래키에 유니크 제약조건이 추가된 것이다. 따라서 일대일 관계에서는 주 테이블과 대상 테이블 모두 외래키를 가질 수 있다. 
+- 다대일 양방향 매핑 처럼 외래 키가 있는 곳이 연관관계의 주인
+![image](https://user-images.githubusercontent.com/22049906/196361883-4bc57d4c-5e08-4fe7-8231-9226693fad38.png)
+
+```java
+@Entity
+public class Member{
+    @Id @GeneratedValue
+    @Column(name="MEMBER_ID")
+    private Long id;
+
+    @Column(name = "USER_NAME")
+    private String username;
+
+    @OneToOne
+    @JoinColumn(name = "LOCKER_ID")
+    private Locker locker;
+}
+```
+```java
+@Entity
+public class Locker{
+    @Id @GeneratedValue
+    private Long id;
+
+    private String name;
+
+    /* 일대일 양방향
+    @OneToOne(mappedBy = locker)
+    private Member member;
+    */
+}
+```
+#### 외래키 설정 테이블은?
+```MEMBER (주 테이블) 설정 시```
+- 주 객체가 대상 객체의 참조를 가지는 것 처럼 주 테이블에 외래 키를 두고 대상 테이블을 찾는다.(객체지향 개발자 선호)
+- Member 테이블을 많이 조회한다고 가정하면, Locker 값이 존재하는지를 확인할 수 있다. (한 쿼리로 Locker 값 조회 가능)
+- 값이 없으면 외래 키에 null 허용해야 한다.
+
+```LOCKER (대상 테이블) 설정 시```
+- 대상 테이블에 외래 키가 존재한다.(데이터베이스 개발자 선호)
+- Member가 여러 개의 Locker를 가질 수 있게 관계를 변경해야 할 때, Locker에 UNIQUE 제약조건만 삭제하면 된다.(테이블의 구조가 유지됨)
+- 프록시 기능의 한계로 지연 로딩으로 설정해도 항상 즉시 로딩된다.
+
+### 4. 다대다
+관계형 데이터베이스는 정규화된 테이블 2개로 다대다 관계를 표현할 수 없어서 연결 테이블을 추가해서 일대다, 다대일 관계로 풀어내야 한다.
+![image](https://user-images.githubusercontent.com/22049906/196368962-6e7d26e0-8eb4-42a6-999c-86e79ffbd081.png)
+```Java
+@Entity
+public class Member{
+    @Id @GeneratedValue
+    private Long id;
+
+    private String username;
+
+    @ManyToMany
+    @JoinColumn(name="MEMBER_PRODUCT")
+    private List<Product> products = new ArrayList<>();
+}
+
+@Entity
+public class Product{
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+
+    @ManyToMany(mappedBy = "products")
+    private List<Member> members = new ArrayList<>();
+}
+```
+- 편리해 보이지만 실무에서 사용하지 않는다.
+- 만약 @ManyToMnay를 사용한 경우라면 MemberProduct라는 객체가 없으므로, 조인 테이블에 있는 MEMBER_PRODUCT의 주문수량, 주문시간에 접근할 수 없다.
+
+![image](https://user-images.githubusercontent.com/22049906/196371266-d238ccf9-cbeb-4376-8e0f-164900fd6b52.png)
+
+```java
+@Entity
+public class Member{
+    @Id @GeneratedValue
+    private Long id;
+
+    private String username;
+
+    @OneToMany(mappedBy = member)
+    private List<Orders> orders = new ArrayList<>();
+}
+```
+```java
+@Entity
+public class Orders{
+    @Id @GeneratedValue
+    private Long id;
+
+    @ManyToOne
+    @JoinColumn(name="MEMBER_ID")
+    private Member member;
+
+    @ManyToOne
+    @JoinColumn(name="PRODUCT_ID")
+    private Product product;
+
+    private long price;
+    private LocalDateTime orderDateTime;
+}
+```
+```Java
+@Entity
+public class Product{
+    @Id @GeneratedValue
+    private Long id;
+    private String name;
+    
+    @OneToMany(mappedBy = "product")
+    private List<Order> orders = new ArrayList<>();
+}
+```
 
