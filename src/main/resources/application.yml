@@ -1,6 +1,7 @@
 spring:
-  datasource:    url: jdbc:h2:tcp://localhost/~/spring-jpa
-    username: sa
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/backend
+    username: admin
     password:
     driver-class-name: org.h2.Driver
 
@@ -9,8 +10,14 @@ spring:
       ddl-auto: create
     properties:
       hibernate:
-#        show_sql: true #sysout
         format_sql: true
+      defer-datasource-initialization: true #생성된 스키마에다가 데이터를 채우기를 위해서(하이버네이트 초기화 과정보다 data.sql 먼저 실행되도록 변경되어 오류가 발생)
 
-logging:  level:
+  sql:
+    init:
+      mode: always #모든 데이터베이스에 sql 스크립트를 동작
+      data-locations: classpath:schema/data.sql
+
+logging:
+  level:
     org.hibernate.SQL: debug #logger
