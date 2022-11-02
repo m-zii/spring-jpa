@@ -6,5 +6,5 @@
 - Lombok
 - Gradle
 - H2(Database)
-- 
+- Redis
 ```
