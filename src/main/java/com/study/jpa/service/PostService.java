@@ -9,6 +9,7 @@ import com.study.jpa.config.exception.ErrorCode;
 import com.study.jpa.dto.PostDto;
 import com.study.jpa.entity.Member;
 import com.study.jpa.entity.Post;
+import com.study.jpa.repository.HitsRepositoryCustom;
 import com.study.jpa.repository.MemberRepository;
 import com.study.jpa.repository.PostRepository;
 
@@ -22,13 +23,12 @@ public class PostService {
 	
 	private final PostRepository postRepository;
 	private final MemberRepository memberRepository;
+	private final HitsRepositoryCustom hitsRepositoryCustom;
 	
 	@Transactional
 	public PostDto getPostInfo(Long postId) {
 		Post post = postRepository.findById(postId).orElseThrow(() -> new ApiException(ErrorCode.NOT_FOUND_POST));
-		post.addHits(post.getHits());
-		postRepository.save(post);
-		
+		hitsRepositoryCustom.incrementHits(postId);	//조회수 증가
 		return PostDto.of(post);
 	}
 	
